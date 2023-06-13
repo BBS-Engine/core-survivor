@@ -43,12 +43,6 @@ public class Launcher
         args.add("--gameDirectory");
         args.add(gameDirectory);
 
-        if (settings.has("game.world"))
-        {
-            args.add("-dw");
-            args.add(settings.getString("game.world"));
-        }
-
         if (settings.has("game.width"))
         {
             args.add("-ww");
@@ -59,11 +53,6 @@ public class Launcher
         {
             args.add("-wh");
             args.add(String.valueOf(settings.getInt("game.height")));
-        }
-
-        if (settings.getBool("game.development"))
-        {
-            args.add("--development");
         }
 
         try
@@ -112,8 +101,6 @@ public class Launcher
 
         map.putInt("game.width", 1280);
         map.putInt("game.height", 720);
-        map.putString("game.world", "hello");
-        map.putBool("game.development", true);
         map.putString("game.directory", "game");
 
         DataToString.writeSilently(launcher, map, true);
@@ -126,9 +113,6 @@ public class Launcher
         File folder = new File(System.getProperty("user.dir"));
         StringJoiner joiner = new StringJoiner(File.pathSeparator);
         String slash = File.separator;
-
-        /* Nashorn (for scripting) */
-        joiner.add(System.getProperty("java.home") + slash + "lib" + slash + "ext" + slash + "nashorn.jar");
 
         for (File file : folder.listFiles())
         {
