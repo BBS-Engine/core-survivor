@@ -1,0 +1,98 @@
+import org.gradle.internal.os.OperatingSystem
+
+apply plugin: 'java'
+
+group = 'mchorse'
+version = '0.1'
+
+/* Common dependencies */
+ext.lwjglVersion = "3.3.0"
+ext.commonDependencies = []
+ext.gitHash = { ->
+    def stdout = new ByteArrayOutputStream()
+
+    exec {
+        commandLine 'git', 'rev-parse', '--short', 'HEAD'
+        standardOutput = stdout
+    }
+
+    return stdout.toString().trim()
+}.call()
+
+switch (OperatingSystem.current()) {
+    case OperatingSystem.LINUX:
+        project.ext.lwjglNatives = "natives-linux"
+
+        break
+    case OperatingSystem.MAC_OS:
+        project.ext.lwjglNatives = System.getProperty("os.arch").startsWith("aarch64") ? "natives-macos-arm64" : "natives-macos"
+
+        break
+    case OperatingSystem.WINDOWS:
+        project.ext.lwjglNatives = "natives-windows"
+
+        break
+}
+
+if (project.hasProperty("os")) {
+    ext.lwjglNatives = "natives-" + project.getProperties().get("os")
+}
+
+ext.commonDependencies.addAll([
+    "org.lwjgl:lwjgl:$lwjglVersion",
+    "org.lwjgl:lwjgl-glfw:$lwjglVersion",
+    "org.lwjgl:lwjgl-openal:$lwjglVersion",
+    "org.lwjgl:lwjgl-opengl:$lwjglVersion",
+    "org.lwjgl:lwjgl-stb:$lwjglVersion",
+    "org.lwjgl:lwjgl:$lwjglVersion:$lwjglNatives",
+    "org.lwjgl:lwjgl-glfw:$lwjglVersion:$lwjglNatives",
+    "org.lwjgl:lwjgl-openal:$lwjglVersion:$lwjglNatives",
+    "org.lwjgl:lwjgl-opengl:$lwjglVersion:$lwjglNatives",
+    "org.lwjgl:lwjgl-stb:$lwjglVersion:$lwjglNatives",
+    "org.greenrobot:eventbus-java:3.3.1",
+    "org.joml:joml:1.9.2"
+])
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://repo.spongepowered.org/maven/"
+    }
+    maven {
+        url "https://maven.fabricmc.net/"
+    }
+    maven {
+        url "https://jitpack.io/"
+    }
+}
+
+task processSource(type: Sync) {
+    from sourceSets.main.java
+    filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: [GIT_HASH: gitHash])
+    into "$buildDir/src"
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'mchorse.Launcher', 'Class-Path': 'dependencies/bbs-engine-0.1.jar'
+    }
+}
+
+compileJava {
+    archivesBaseName = "launcher"
+    version = ""
+    source = processSource.outputs
+}
+
+dependencies {
+    implementation files('libs/bbs-engine-0.1.jar')
+    implementation commonDependencies
+}
+
+/* Copy runtime libraries for building */
+task copyRuntimeLibs(type: Copy) {
+    from sourceSets.main.compileClasspath
+    into "build/dependencies/"
+}
+
+tasks.build.dependsOn.add(copyRuntimeLibs)
