@@ -7,12 +7,10 @@ printf "Building...\n\n"
 FOLDER="release"
 
 if [ "$#" -lt 1 ]; then
-    gradle build
-    gradle copyRuntimeLibs
+    gradle build copyRuntimeLibs
 else
     FOLDER="release-$1"
-    gradle build -Pos="$1"
-    gradle copyRuntimeLibs -Pos="$1"
+    gradle build copyRuntimeLibs -Pos="$1"
 fi
 
 # Copy assets
